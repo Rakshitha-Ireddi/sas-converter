@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#20c4f4"/>
+      <stop offset="50%" style="stop-color:#00aeef"/>
+      <stop offset="100%" style="stop-color:#006e98"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="45" fill="url(#logoGradient)"/>
+  <text x="50" y="58" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold">S2P</text>
+</svg>

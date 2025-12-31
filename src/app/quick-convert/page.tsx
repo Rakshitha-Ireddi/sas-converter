@@ -2,87 +2,74 @@
 
 import { useState } from 'react';
 import Editor from '@/components/Editor';
+import Output from '@/components/Output';
+import TargetSelector from '@/components/TargetSelector';
+import ConvertButton from '@/components/ConvertButton';
+import StatsBar from '@/components/StatsBar';
+import { convertSasCode } from '@/lib/api';
 
 export default function QuickConvertPage() {
     const [sasCode, setSasCode] = useState('');
     const [isConverting, setIsConverting] = useState(false);
     const [result, setResult] = useState<any>(null);
-    const [copySuccess, setCopySuccess] = useState(false);
+    const [target, setTarget] = useState('pyspark');
+    const [error, setError] = useState('');
 
     const handleConvert = async () => {
         setIsConverting(true);
+        setError('');
         try {
-            const response = await fetch('/api/quick-convert', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sasCode, target: 'pyspark_bdh' })
-            });
-            const data = await response.json();
+            const data = await convertSasCode(sasCode, target);
             setResult(data);
-        } catch (e) {
+        } catch (e: any) {
+            setError('Conversion failed. Please check your code or try again.');
             console.error(e);
         } finally {
             setIsConverting(false);
         }
     };
 
-    const handleCopy = () => {
-        if (!result) return;
-        const code = result.files[0].content;
-        navigator.clipboard.writeText(code);
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
-    };
-
     return (
-        <div className="min-h-screen pt-20 pb-10 px-6">
-            <div className="max-w-7xl mx-auto grid grid-cols-2 gap-6 h-[80vh]">
-                {/* SAS Input Panel */}
-                <div className="flex flex-col panel panel-sas">
-                    <div className="panel-header">
-                        <span className="font-semibold text-gray-700 dark:text-gray-200">SAS Input</span>
-                    </div>
-                    <div className="flex-1 relative">
-                        <Editor
-                            value={sasCode}
-                            onChange={setSasCode}
-                            placeholder="Paste your SAS code here..."
-                        />
+        <div className="min-h-screen pt-20 pb-10 px-6 bg-gray-50 dark:bg-gray-950">
+            <div className="max-w-7xl mx-auto h-[85vh] flex flex-col gap-4">
+
+                {/* Controls */}
+                <div className="flex items-center justify-between bg-white dark:bg-gray-900 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
+                    <TargetSelector value={target} onChange={setTarget} />
+                    <div className="flex items-center space-x-4">
+                        {error && <span className="text-red-500 text-sm">{error}</span>}
+                        <ConvertButton onClick={handleConvert} isLoading={isConverting} disabled={!sasCode} />
                     </div>
                 </div>
 
-                {/* PySpark Output Panel */}
-                <div className="flex flex-col panel panel-pyspark">
-                    <div className="panel-header">
-                        <span className="font-semibold text-gray-700 dark:text-gray-200">PySpark Output</span>
-                        {result && (
-                            <button onClick={handleCopy} className={`btn btn-sm ${copySuccess ? 'btn-success' : 'btn-secondary'}`}>
-                                {copySuccess ? 'Copied!' : 'Copy Code'}
-                            </button>
-                        )}
+                <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+                    {/* SAS Input Panel */}
+                    <div className="flex flex-col h-full">
+                        <div className="mb-2 font-semibold text-gray-700 dark:text-gray-200">SAS Input</div>
+                        <div className="flex-1 relative">
+                            <Editor
+                                value={sasCode}
+                                onChange={setSasCode}
+                                placeholder="Paste your SAS code here..."
+                            />
+                        </div>
                     </div>
-                    <div className="flex-1 relative bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-                        {result ? (
-                            <pre className="p-4 text-sm font-mono text-gray-800 dark:text-gray-200 overflow-auto h-full">
-                                {result.files[0].content}
-                            </pre>
-                        ) : (
-                            <div className="h-full flex items-center justify-center text-gray-400">
-                                {isConverting ? 'Converting...' : 'Output will appear here'}
-                            </div>
-                        )}
+
+                    {/* Output Panel */}
+                    <div className="flex flex-col h-full">
+                        <div className="mb-2 font-semibold text-gray-700 dark:text-gray-200">Converted Output</div>
+                        <div className="flex-1 relative">
+                            <Output result={result} />
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2">
-                <button
-                    onClick={handleConvert}
-                    disabled={!sasCode || isConverting}
-                    className="convert-button shadow-xl"
-                >
-                    {isConverting ? 'Processing...' : 'Convert to PySpark'}
-                </button>
+                {/* Stats */}
+                {result && result.files && (
+                    <div className="rounded-lg overflow-hidden shadow-sm">
+                        <StatsBar files={result.files} />
+                    </div>
+                )}
             </div>
         </div>
     );
